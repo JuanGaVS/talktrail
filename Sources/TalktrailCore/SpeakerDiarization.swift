@@ -47,6 +47,9 @@ public enum SpeakerDiarization {
         label: String,
         onStatus: @escaping @Sendable (String) -> Void
     ) async -> String? {
+        // Nobody spoke on this channel (the call audio stayed silent): there is no one to identify, and
+        // the diarizer would only fail with "no speech detected".
+        guard segments.contains(where: { $0.speaker == channel }) else { return nil }
         guard let models = modelsDirectory else {
             onStatus(localized("Warning: the speaker identification models are missing; saving without telling voices apart."))
             return nil

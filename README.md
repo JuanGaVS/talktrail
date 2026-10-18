@@ -90,6 +90,9 @@ cp -R /tmp/talktrail-models/speaker-diarization Models/
 
 The first time, macOS asks for **Microphone** and **System Audio Recording** permission.
 
+If something goes wrong, the icon turns into a warning triangle and the menu shows what happened. It goes
+back to normal when the next transcription starts.
+
 **CLI:**
 
 ```sh

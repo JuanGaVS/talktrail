@@ -33,6 +33,9 @@ struct RecorderMenu: View {
                 .disabled(recorder.isBusy || !(recorder.captureMicrophone || recorder.captureSystemAudio))
         }
         Text(recorder.status)
+        if let warning = recorder.warning {
+            Text(warning)
+        }
 
         Divider()
 
@@ -73,7 +76,11 @@ struct RecorderMenu: View {
 final class Recorder {
     private(set) var isRecording = false
     private(set) var isBusy = false
-    private(set) var hasWarning = false
+    /// The last warning or error. It stays in the menu, with a warning icon in the menu bar, until the next
+    /// transcription starts, so later status updates ("Saved: …") don't hide it.
+    private(set) var warning: String? {
+        didSet { if let warning { FileHandle.standardError.write(Data("› \(warning)\n".utf8)) } }
+    }
     private(set) var status = localized("Ready") {
         didSet { FileHandle.standardError.write(Data("› \(status)\n".utf8)) }
     }
@@ -95,7 +102,7 @@ final class Recorder {
     private var session: RecordingSession?
 
     var symbolName: String {
-        if hasWarning { return "exclamationmark.triangle" }
+        if warning != nil { return "exclamationmark.triangle" }
         return isRecording ? "record.circle.fill" : "waveform"
     }
 
@@ -114,7 +121,7 @@ final class Recorder {
     func start() async {
         guard session == nil, !isBusy else { return }
         isBusy = true
-        hasWarning = false
+        warning = nil
         status = localized("Preparing…")
 
         var configuration = RecordingSession.Configuration(
@@ -125,10 +132,11 @@ final class Recorder {
         configuration.identifySpeakers = identifySpeakers
         let session = RecordingSession(configuration: configuration, onLine: { _ in }) { [weak self] message in
             Task { @MainActor in
-                self?.status = message
                 // Warnings and errors from TalktrailCore start with these words.
                 if message.hasPrefix(localized("Warning")) || message.hasPrefix(localized("Error")) {
-                    self?.hasWarning = true
+                    self?.warning = message
+                } else {
+                    self?.status = message
                 }
             }
         }
@@ -139,8 +147,8 @@ final class Recorder {
             isRecording = true
             status = localized("Transcribing → %@", url.lastPathComponent)
         } catch {
-            hasWarning = true
-            status = localized("Error: %@", error.localizedDescription)
+            status = localized("Ready")
+            warning = localized("Error: %@", error.localizedDescription)
         }
         isBusy = false
     }
