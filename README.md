@@ -61,7 +61,7 @@ Ejemplo de salida:
 scripts/build.sh
 ```
 
-Deja `build/Talktrail.app` (la app de barra de menú) y `build/talktrail` (la CLI), firmados ad-hoc. Para distribuirlo a otros equipos, firma con Developer ID y notariza:
+Deja `build/Talktrail.app` (la app de barra de menú) y `build/talktrail` (la CLI), firmados ad-hoc. GitHub Actions corre el mismo script en macOS 26 en cada pull request y en cada cambio a `main` (`.github/workflows/build.yml`). Para distribuirlo a otros equipos, firma con Developer ID y notariza:
 
 ```sh
 SIGN_IDENTITY="Developer ID Application: <Nombre> (<TEAMID>)" scripts/build.sh

@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    # SpeechAnalyzer needs the macOS 26 SDK.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show toolchain versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build the app and the CLI
+        run: scripts/build.sh
+
+      - name: Verify
+        run: |
+          codesign --verify --deep --strict build/Talktrail.app
+          codesign --verify --strict build/talktrail
+          build/talktrail --help
+          test -f build/Talktrail.app/Contents/Resources/Licenses/NOTICE
+          test -d build/Talktrail.app/Contents/Resources/Models/speaker-diarization
