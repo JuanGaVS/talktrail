@@ -1,0 +1,16 @@
+Talktrail
+Copyright 2026 The Talktrail Authors
+
+This product includes FluidAudio (https://github.com/FluidInference/FluidAudio),
+developed by FluidInference and licensed under the Apache License, Version 2.0.
+FluidAudio's own third-party notices are copied to Licenses/FluidAudio inside
+the built app.
+
+The speaker diarization models in Models/speaker-diarization are
+"speaker-diarization-coreml" by FluidInference
+(https://huggingface.co/FluidInference/speaker-diarization-coreml, revision
+df2625ac79a7ac6b65ad868fee6d80f320da4232), licensed under CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/). They are Core ML conversions of
+"speaker-diarization-community-1" by pyannote
+(https://huggingface.co/pyannote/speaker-diarization-community-1), also licensed
+under CC BY 4.0. Talktrail uses them unmodified.
