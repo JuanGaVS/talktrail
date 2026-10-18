@@ -4,7 +4,7 @@ import AVFoundation
 ///
 /// While the call runs, phrases are appended to a draft in the user's temporary folder, labelled by
 /// channel. When it stops, the remote audio is diarized on the device, each remote phrase is attributed to
-/// "Persona 1", "Persona 2"…, the final transcript is written and the draft and temporary audio are deleted.
+/// "Speaker 1", "Speaker 2"…, the final transcript is written and the draft and temporary audio are deleted.
 public final class RecordingSession: @unchecked Sendable {
     public struct Configuration: Sendable {
         public var locale: Locale
@@ -13,13 +13,20 @@ public final class RecordingSession: @unchecked Sendable {
         public var captureSystemAudio = true
         /// Tell the remote participants apart after the call.
         public var identifySpeakers = true
-        public var microphoneLabel = "Yo"
-        public var systemAudioLabel = "Remoto"
-        public var speakerLabel = "Persona"
+        public var microphoneLabel = localized("Me")
+        public var systemAudioLabel = localized("Remote")
+        public var speakerLabel = localized("Speaker")
 
-        public init(locale: Locale, outputDirectory: URL) {
+        public init(locale: Locale, outputDirectory: URL = Self.defaultOutputDirectory) {
             self.locale = locale
             self.outputDirectory = outputDirectory
+        }
+
+        /// `~/Documents/Transcripts`, with the folder name in the user's language.
+        public static var defaultOutputDirectory: URL {
+            FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Documents", isDirectory: true)
+                .appendingPathComponent(localized("Transcripts"), isDirectory: true)
         }
     }
 
@@ -101,18 +108,21 @@ public final class RecordingSession: @unchecked Sendable {
         }
 
         var channelsField: [String] = []
-        if configuration.captureMicrophone { channelsField.append("\(configuration.microphoneLabel) (micrófono)") }
-        if configuration.captureSystemAudio { channelsField.append("\(participants) (audio de la llamada)") }
+        if configuration.captureMicrophone { channelsField.append(localized("%@ (microphone)", configuration.microphoneLabel)) }
+        if configuration.captureSystemAudio { channelsField.append(localized("%@ (call audio)", participants)) }
         do {
             let url = try TranscriptStorage.write(
-                segments, format: format, title: "Transcripción",
-                fields: [("Idioma", locale?.identifier ?? ""), ("Participantes", channelsField.joined(separator: " · "))],
+                segments, format: format, title: localized("Transcript"),
+                fields: [
+                    (localized("Language"), locale?.identifier ?? ""),
+                    (localized("Participants"), channelsField.joined(separator: " · ")),
+                ],
                 end: end, in: configuration.outputDirectory
             )
             try? FileManager.default.removeItem(at: draft)
             return url
         } catch {
-            onStatus("Error: \(error.localizedDescription). El borrador queda en \(draft.path)")
+            onStatus(localized("Error: %@. The draft is kept at %@", error.localizedDescription, draft.path))
             return draft
         }
     }
@@ -121,7 +131,7 @@ public final class RecordingSession: @unchecked Sendable {
         let config = configuration
         AudioRecording.removeLeftovers()
         for url in TranscriptStorage.recoverDrafts(into: config.outputDirectory) {
-            onStatus("Se recuperó una transcripción incompleta de una sesión anterior: \(url.lastPathComponent)")
+            onStatus(localized("Recovered an unfinished transcript from a previous session: %@", url.lastPathComponent))
         }
         let locale = try await SpeechModel.prepare(config.locale, onStatus: onStatus)
         self.locale = locale
@@ -130,16 +140,16 @@ public final class RecordingSession: @unchecked Sendable {
         }
 
         var sources: [String] = []
-        if config.captureMicrophone { sources.append("\(config.microphoneLabel) = micrófono") }
-        if config.captureSystemAudio { sources.append("\(config.systemAudioLabel) = audio del sistema") }
+        if config.captureMicrophone { sources.append(localized("%@ = microphone", config.microphoneLabel)) }
+        if config.captureSystemAudio { sources.append(localized("%@ = system audio", config.systemAudioLabel)) }
         let sessionHostTime = mach_absolute_time()
         let format = TranscriptFormat(start: Date(), clock: .wallClock)
         let transcript = try TranscriptFile(
             directory: TranscriptStorage.draftsDirectory,
             format: format,
             name: format.fileName(),
-            title: "Transcripción (borrador en vivo)",
-            fields: [("Idioma", locale.identifier), ("Canales", sources.joined(separator: " · "))],
+            title: localized("Transcript (live draft)"),
+            fields: [(localized("Language"), locale.identifier), (localized("Channels"), sources.joined(separator: " · "))],
             echoFilter: config.captureMicrophone && config.captureSystemAudio
                 ? .init(microphone: config.microphoneLabel, systemAudio: config.systemAudioLabel)
                 : nil,
@@ -173,7 +183,7 @@ public final class RecordingSession: @unchecked Sendable {
             channels.append(channel)
             systemChannel = channel
             let monitor = SilenceMonitor(after: 45) { [onStatus] in
-                onStatus("Aviso: el audio del sistema sigue en silencio. Si ya sonó algo, revisa Ajustes del Sistema > Privacidad y seguridad > Grabación de pantalla y audio del sistema.")
+                onStatus(localized("Warning: the system audio is still silent. If something has played already, check System Settings > Privacy & Security > Screen & System Audio Recording."))
             }
             let meter = LevelMeter(label: config.systemAudioLabel, report: onStatus)
             let systemAudio = SystemAudioCapture()
@@ -215,8 +225,8 @@ private final class LevelMeter: @unchecked Sendable {
         peak = max(peak, buffer.peak)
         let now = Date()
         guard now.timeIntervalSince(lastReport) >= 3 else { return }
-        let decibels = peak > 0 ? String(format: "%.0f dBFS", 20 * log10(peak)) : "silencio"
-        report("[debug] \(label): \(buffers) buffers, \(buffer.format.sampleRate) Hz × \(buffer.format.channelCount), pico \(decibels)")
+        let decibels = peak > 0 ? String(format: "%.0f dBFS", 20 * log10(peak)) : "silence"
+        report("[debug] \(label): \(buffers) buffers, \(buffer.format.sampleRate) Hz × \(buffer.format.channelCount), peak \(decibels)")
         peak = 0
         buffers = 0
         lastReport = now

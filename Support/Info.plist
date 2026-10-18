@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>es</string>
+	</array>
 	<key>CFBundleIdentifier</key>
 	<string>io.github.juangavs.talktrail.cli</string>
 	<key>CFBundleName</key>
@@ -9,8 +16,8 @@
 	<key>CFBundleShortVersionString</key>
 	<string>0.1.0</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>talktrail transcribe tu voz en esta Mac. El audio nunca sale del equipo.</string>
+	<string>talktrail transcribes your voice on this Mac. The audio never leaves it.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>talktrail transcribe el audio de la llamada en esta Mac. El audio nunca sale del equipo.</string>
+	<string>talktrail transcribes the call audio on this Mac. The audio never leaves it.</string>
 </dict>
 </plist>

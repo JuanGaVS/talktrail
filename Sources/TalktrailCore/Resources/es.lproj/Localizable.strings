@@ -1,0 +1,86 @@
+/* Spanish. Keys are the English text; see Sources/TalktrailCore/Localization.swift. */
+
+/* Menu bar app */
+"Start transcription" = "Iniciar transcripción";
+"Stop transcription" = "Detener transcripción";
+"Language" = "Idioma";
+"Microphone (%@)" = "Micrófono (%@)";
+"Call audio (%@)" = "Audio de la llamada (%@)";
+"Identify each speaker when done" = "Identificar a cada persona al terminar";
+"Open last transcript" = "Abrir última transcripción";
+"Open transcripts folder" = "Abrir carpeta de transcripciones";
+"Quit" = "Salir";
+"Ready" = "Listo";
+"Preparing…" = "Preparando…";
+"Transcribing → %@" = "Transcribiendo → %@";
+"Finishing the transcript…" = "Terminando la transcripción…";
+"Saved: %@" = "Guardado: %@";
+
+/* Status messages. Warnings start with "Warning" and errors with "Error"; the app shows a warning icon for both */
+"Warning" = "Aviso";
+"Error" = "Error";
+"Error: %@" = "Error: %@";
+"Error: %@. The draft is kept at %@" = "Error: %1$@. El borrador queda en %2$@";
+"Error transcribing \"%@\": %@" = "Error transcribiendo \"%@\": %@";
+"Downloading the speech model for %@ (first time only)…" = "Descargando el modelo de voz para %@ (solo la primera vez)…";
+"Recovered an unfinished transcript from a previous session: %@" = "Se recuperó una transcripción incompleta de una sesión anterior: %@";
+"Warning: the system audio is still silent. If something has played already, check System Settings > Privacy & Security > Screen & System Audio Recording." = "Aviso: el audio del sistema sigue en silencio. Si ya sonó algo, revisa Ajustes del Sistema > Privacidad y seguridad > Grabación de pantalla y audio del sistema.";
+"Identifying speakers…" = "Identificando a las personas…";
+"Identifying speakers… %ld%%" = "Identificando a las personas… %ld %%";
+"Warning: the speaker identification models are missing; saving without telling voices apart." = "Aviso: faltan los modelos de identificación de personas; se guarda sin separar voces.";
+"Warning: could not identify the speakers (%@)." = "Aviso: no se pudo identificar a las personas (%@).";
+"⚠️ Could not write to %@: %@" = "⚠️ No se pudo escribir en %1$@: %2$@";
+
+/* Transcript files */
+"Transcripts" = "Transcripciones";
+"transcript" = "transcripcion";
+"recovered" = "recuperada";
+"Transcript" = "Transcripción";
+"Transcript (live draft)" = "Transcripción (borrador en vivo)";
+"Transcript (draft)" = "Transcripción (borrador)";
+"Started" = "Inicio";
+"Ended: %@ · duration %ld min" = "Fin: %@ · duración %ld min";
+"File" = "Archivo";
+"Channels" = "Canales";
+"Participants" = "Participantes";
+"Me" = "Yo";
+"Remote" = "Remoto";
+"Speaker" = "Persona";
+"Audio" = "Audio";
+"%@ (microphone)" = "%@ (micrófono)";
+"%@ (call audio)" = "%@ (audio de la llamada)";
+"%@ = microphone" = "%@ = micrófono";
+"%@ = system audio" = "%@ = audio del sistema";
+
+/* Errors */
+"Core Audio failed to %@ (OSStatus %d %@)." = "Core Audio falló al %@ (OSStatus %d %@).";
+"create the system audio tap" = "crear el tap de audio del sistema";
+"create the aggregate device" = "crear el dispositivo agregado";
+"read the tap format" = "leer el formato del tap";
+"register the audio callback" = "registrar el callback de audio";
+"start capturing system audio" = "iniciar la captura del audio del sistema";
+"read the default output device" = "leer el dispositivo de salida por defecto";
+"read the output device UID" = "leer el UID del dispositivo de salida";
+"No microphone is available." = "No hay ningún micrófono disponible.";
+"No microphone permission. Turn it on in System Settings > Privacy & Security > Microphone." = "Sin permiso de micrófono. Actívalo en Ajustes del Sistema > Privacidad y seguridad > Micrófono.";
+"On-device transcription is not available on this Mac." = "La transcripción en el dispositivo no está disponible en esta Mac.";
+"The language \"%@\" is not supported. Run `talktrail locales` to see the list." = "El idioma \"%@\" no está soportado. Ejecuta `talktrail locales` para ver la lista.";
+"Could not determine the audio format for the speech model." = "No se pudo determinar el formato de audio para el modelo de voz.";
+"Could not create the transcript file at %@." = "No se pudo crear el archivo de transcripción en %@.";
+
+/* Command-line tool */
+"cli.usage" = "talktrail — transcribe llamadas en esta Mac (micrófono + audio del sistema). Nada sale del equipo.\n\nUSO\n  talktrail record [opciones]                Graba y transcribe hasta Ctrl+C\n  talktrail transcribe <audio> [opciones]    Transcribe un archivo de audio existente\n  talktrail locales                          Lista los idiomas disponibles\n  talktrail fetch-models <carpeta>           Descarga los modelos de identificación de personas\n                                             (solo para empaquetar la app; la app nunca descarga nada)\n\nOPCIONES\n  -l, --locale <código>     Idioma: es-ES, es-MX, en-US… (por defecto, el del sistema)\n  -o, --output <carpeta>    Carpeta de transcripciones (por defecto, ~/Documents/Transcripciones)\n  -d, --duration <seg>      Detener automáticamente tras N segundos\n      --no-mic              No transcribir el micrófono\n      --no-system           No transcribir el audio del sistema\n      --me <nombre>         Etiqueta del micrófono (por defecto, \"Yo\")\n      --them <nombre>       Etiqueta del audio del sistema (por defecto, \"Remoto\")\n      --no-speakers         No separar a las personas (sin diarización)";
+"missing value for %@" = "falta el valor de %@";
+"invalid duration" = "duración inválida";
+"unknown option %@" = "opción desconocida %@";
+"unknown command \"%@\"" = "comando desconocido \"%@\"";
+"specify the audio file" = "indica el archivo de audio";
+"specify the destination folder" = "indica la carpeta de destino";
+"--no-mic and --no-system together leave nothing to record" = "--no-mic y --no-system juntos no dejan nada que grabar";
+"Recording. Live draft at %@" = "Grabando. Borrador en vivo en %@";
+"Stopping in %ld s (or Ctrl+C)." = "Se detendrá en %ld s (o Ctrl+C).";
+"Press Ctrl+C to finish." = "Ctrl+C para terminar.";
+"Done: %@" = "Listo: %@";
+"Done" = "Listo";
+"installed" = "instalado";
+"Downloading the models to %@…" = "Descargando los modelos en %@…";
