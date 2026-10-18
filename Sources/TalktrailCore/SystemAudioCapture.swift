@@ -47,7 +47,7 @@ public final class SystemAudioCapture: @unchecked Sendable {
             description.name = "talktrail"
             description.isPrivate = true
             description.muteBehavior = .unmuted
-            try check(AudioHardwareCreateProcessTap(description, &tapID), "crear el tap de audio del sistema")
+            try check(AudioHardwareCreateProcessTap(description, &tapID), localized("create the system audio tap"))
 
             // The default output device only provides the clock; the global tap hears every process
             // regardless of the device it plays to.
@@ -67,12 +67,12 @@ public final class SystemAudioCapture: @unchecked Sendable {
             ]
             try check(
                 AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &aggregateID),
-                "crear el dispositivo agregado"
+                localized("create the aggregate device")
             )
 
             var streamDescription = try Self.tapFormat(tapID)
             guard let format = AVAudioFormat(streamDescription: &streamDescription) else {
-                throw TalktrailError.coreAudio(kAudioHardwareUnsupportedOperationError, "leer el formato del tap")
+                throw TalktrailError.coreAudio(kAudioHardwareUnsupportedOperationError, localized("read the tap format"))
             }
             self.format = format
 
@@ -80,11 +80,11 @@ public final class SystemAudioCapture: @unchecked Sendable {
                 AudioDeviceCreateIOProcIDWithBlock(&ioProcID, aggregateID, ioQueue) { [weak self] _, input, inputTime, _, _ in
                     self?.deliver(input, at: inputTime)
                 },
-                "registrar el callback de audio"
+                localized("register the audio callback")
             )
             // The first start triggers the "System Audio Recording" permission prompt. Without
             // permission the tap delivers silence instead of failing.
-            try check(AudioDeviceStart(aggregateID, ioProcID), "iniciar la captura del audio del sistema")
+            try check(AudioDeviceStart(aggregateID, ioProcID), localized("start capturing system audio"))
         } catch {
             stopTap()
             throw error
@@ -168,7 +168,7 @@ public final class SystemAudioCapture: @unchecked Sendable {
         var size = UInt32(MemoryLayout<AudioObjectID>.size)
         try check(
             AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device),
-            "leer el dispositivo de salida por defecto"
+            localized("read the default output device")
         )
 
         address = Self.address(kAudioDevicePropertyDeviceUID)
@@ -176,9 +176,9 @@ public final class SystemAudioCapture: @unchecked Sendable {
         size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
         try check(
             AudioObjectGetPropertyData(device, &address, 0, nil, &size, &uid),
-            "leer el UID del dispositivo de salida"
+            localized("read the output device UID")
         )
-        guard let uid else { throw TalktrailError.coreAudio(kAudioHardwareBadDeviceError, "leer el UID del dispositivo de salida") }
+        guard let uid else { throw TalktrailError.coreAudio(kAudioHardwareBadDeviceError, localized("read the output device UID")) }
         return uid.takeRetainedValue() as String
     }
 
@@ -186,7 +186,7 @@ public final class SystemAudioCapture: @unchecked Sendable {
         var address = address(kAudioTapPropertyFormat)
         var format = AudioStreamBasicDescription()
         var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-        try check(AudioObjectGetPropertyData(tap, &address, 0, nil, &size, &format), "leer el formato del tap")
+        try check(AudioObjectGetPropertyData(tap, &address, 0, nil, &size, &format), localized("read the tap format"))
         return format
     }
 }

@@ -2,6 +2,7 @@ import CoreAudio
 import Foundation
 
 public enum TalktrailError: LocalizedError {
+    /// A Core Audio call failed. The operation completes "Core Audio failed to …".
     case coreAudio(OSStatus, String)
     case noInputDevice
     case microphoneAccessDenied
@@ -13,19 +14,19 @@ public enum TalktrailError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case let .coreAudio(status, operation):
-            return "Core Audio falló al \(operation) (OSStatus \(status) \(fourCC(status)))."
+            return localized("Core Audio failed to %@ (OSStatus %d %@).", operation, status, fourCC(status))
         case .noInputDevice:
-            return "No hay ningún micrófono disponible."
+            return localized("No microphone is available.")
         case .microphoneAccessDenied:
-            return "Sin permiso de micrófono. Actívalo en Ajustes del Sistema > Privacidad y seguridad > Micrófono."
+            return localized("No microphone permission. Turn it on in System Settings > Privacy & Security > Microphone.")
         case .transcriberUnavailable:
-            return "La transcripción en el dispositivo no está disponible en esta Mac."
+            return localized("On-device transcription is not available on this Mac.")
         case let .unsupportedLocale(identifier):
-            return "El idioma \"\(identifier)\" no está soportado. Ejecuta `talktrail locales` para ver la lista."
+            return localized("The language \"%@\" is not supported. Run `talktrail locales` to see the list.", identifier)
         case .noAnalyzerFormat:
-            return "No se pudo determinar el formato de audio para el modelo de voz."
+            return localized("Could not determine the audio format for the speech model.")
         case let .outputFile(path):
-            return "No se pudo crear el archivo de transcripción en \(path)."
+            return localized("Could not create the transcript file at %@.", path)
         }
     }
 }

@@ -1,0 +1,4 @@
+/* Spanish permission prompts for Talktrail.app (Support/Talktrail-Info.plist). */
+
+"NSMicrophoneUsageDescription" = "Talktrail transcribe tu voz en esta Mac. El audio nunca sale del equipo.";
+"NSAudioCaptureUsageDescription" = "Talktrail transcribe el audio de la llamada en esta Mac. El audio nunca sale del equipo.";

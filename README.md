@@ -1,75 +1,77 @@
 # Talktrail
 
-Transcripción local de llamadas para macOS. Graba tu micrófono y el audio de la llamada (Zoom, Teams, Meet, lo que sea), transcribe en el equipo y deja un archivo Markdown en `~/Documents/Transcripciones`. **Ningún audio ni texto sale de la Mac.**
+Local call transcription for macOS. Talktrail records your microphone and the call audio (Zoom, Teams, Meet, anything), transcribes them on the Mac and saves a Markdown file to `~/Documents/Transcripts`. **No audio or text ever leaves the Mac.**
 
-Por ahora es la única función: no hay supresión de ruido ni cambio de acento.
+For now that is its only feature: there is no noise suppression or accent conversion.
 
-## Por qué no usa un driver de audio
+The app and the command-line tool are in English and Spanish and follow the macOS language.
 
-Muchas herramientas para llamadas instalan un driver de audio virtual (un plug-in HAL de Core Audio) que hay que elegir como micrófono o parlante en Zoom, Teams o Meet. Eso hace falta cuando se **modifica** el audio, por ejemplo para quitar ruido. Para **solo transcribir** no hace falta: Talktrail lee el micrófono como cualquier app y captura lo que suena por los parlantes con un *process tap* de Core Audio (macOS 14.4+). No instala nada en `/Library`, no necesita permisos de administrador, no puede tumbar `coreaudiod` y el usuario no tiene que cambiar el dispositivo en la app de llamadas.
+## Why there is no audio driver
 
-## Cómo funciona
+Many call tools install a virtual audio driver (a Core Audio HAL plug-in) that you have to pick as the microphone or speaker in Zoom, Teams or Meet. That is needed to **modify** the audio, for example to remove noise. To **only transcribe**, it is not: Talktrail reads the microphone like any other app and captures what plays through the speakers with a Core Audio *process tap* (macOS 14.4+). It installs nothing in `/Library`, needs no administrator rights, cannot take down `coreaudiod`, and you never have to change the device in your call app.
+
+## How it works
 
 ```
-Micrófono ──► AVAudioEngine ──────────────► SpeechAnalyzer ("Yo") ──────┐
-                                                                         ├─► borrador en vivo (temporal)
-Audio del sistema ──► process tap ──► SpeechAnalyzer ("Remoto") ────────┘
-                           │                                              al detener:
-                           └──► audio remoto (temporal, 16 kHz) ──► diarización (FluidAudio)
+Microphone ──► AVAudioEngine ─────────────► SpeechAnalyzer ("Me") ───────┐
+                                                                         ├─► live draft (temporary)
+System audio ──► process tap ──► SpeechAnalyzer ("Remote") ──────────────┘
+                      │                                                    when stopped:
+                      └──► remote audio (temporary, 16 kHz) ──► diarization (FluidAudio)
                                                                          │
-                                       ~/Documents/Transcripciones/transcripcion-….md ◄─┘
+                               ~/Documents/Transcripts/transcript-….md ◄─┘
 ```
 
-- **Transcripción:** `SpeechAnalyzer` / `SpeechTranscriber` de Apple (macOS 26), 100 % en el dispositivo. Un analizador por canal.
-- **Eco:** sin audífonos el micrófono también capta la llamada. Se descartan las frases de "Yo" que repiten, en el mismo momento, una frase remota.
-- **Identificación de personas:** al detener, el audio remoto se procesa con [FluidAudio](https://github.com/FluidInference/FluidAudio): segmentación pyannote, embeddings WeSpeaker y agrupamiento VBx, sobre Core ML. Cada palabra se asigna a "Persona 1", "Persona 2"…, y si cambia la persona a mitad de frase, la frase se divide. El micrófono queda como "Yo". Procesar una hora de audio toma uno o dos minutos.
-- **Archivos:** el borrador en vivo se escribe en la carpeta temporal privada del usuario y se borra al generar la transcripción final. El audio remoto temporal también se borra. Si la app se cierra de golpe, en la próxima grabación el borrador se recupera como `…-recuperada.md`.
+- **Transcription:** Apple's `SpeechAnalyzer` / `SpeechTranscriber` (macOS 26), entirely on the device. One analyzer per channel.
+- **Echo:** without headphones, the microphone also picks up the call. Phrases from "Me" that repeat a remote phrase spoken at the same moment are dropped.
+- **Speaker identification:** when you stop, the remote audio goes through [FluidAudio](https://github.com/FluidInference/FluidAudio): pyannote segmentation, WeSpeaker embeddings and VBx clustering, on Core ML. Each word is attributed to "Speaker 1", "Speaker 2"…, and a phrase is split where the speaker changes. The microphone stays "Me". An hour of audio takes a minute or two.
+- **Files:** the live draft is written to the user's private temporary folder and deleted once the final transcript is saved. The temporary remote audio is deleted too. If the app quits unexpectedly, the next recording recovers the draft as `…-recovered.md`.
 
-Ejemplo de salida:
+Sample output:
 
 ```markdown
-# Transcripción
+# Transcript
 
-- **Inicio:** 2026-10-17 10:12:25
-- **Idioma:** es_MX
-- **Participantes:** Yo (micrófono) · Persona 1–2 (audio de la llamada)
+- **Started:** 2026-10-17 10:12:25
+- **Language:** en_US
+- **Participants:** Me (microphone) · Speaker 1–2 (call audio)
 
 ---
 
-**[10:12:40] Persona 1:** Buenos días a todos, gracias por conectarse.
+**[10:12:40] Speaker 1:** Good morning, everyone, thanks for joining.
 
-**[10:12:46] Yo:** Gracias. Empecemos con el presupuesto.
+**[10:12:46] Me:** Thanks. Let's start with the budget.
 ```
 
-## Privacidad y red
+## Privacy and network
 
-| Qué | Dónde | Red |
+| What | Where | Network |
 |---|---|---|
-| Transcripción final | `~/Documents/Transcripciones` (permisos `600`) | — |
-| Borrador en vivo y audio remoto temporal | carpeta temporal del usuario; se borran al terminar | — |
-| Modelo de voz de Apple (uno por idioma) | lo instala macOS la primera vez que se usa un idioma | descarga única desde Apple, solo el modelo |
-| Modelos de identificación de personas (21 MB) | dentro de `Talktrail.app` | **ninguna**: la app fuerza `ModelHub.offlineMode` |
+| Final transcript | `~/Documents/Transcripts` (permissions `600`) | — |
+| Live draft and temporary remote audio | the user's temporary folder; deleted when done | — |
+| Apple speech model (one per language) | installed by macOS the first time a language is used | one-time download from Apple, model only |
+| Speaker identification models (21 MB) | inside `Talktrail.app` | **none**: the app forces `ModelHub.offlineMode` |
 
-## Requisitos
+## Requirements
 
-- macOS 26 o posterior. El build por defecto es para Apple Silicon.
-- Command Line Tools con Swift 6.2 o posterior (no hace falta Xcode).
+- macOS 26 or later. The default build targets Apple Silicon.
+- Command Line Tools with Swift 6.2 or later (Xcode is not required).
 
-## Compilar
+## Building
 
 ```sh
 scripts/build.sh
 ```
 
-Deja `build/Talktrail.app` (la app de barra de menú) y `build/talktrail` (la CLI), firmados ad-hoc. GitHub Actions corre el mismo script en macOS 26 en cada pull request y en cada cambio a `main` (`.github/workflows/build.yml`). Para distribuirlo a otros equipos, firma con Developer ID y notariza:
+This produces `build/Talktrail.app` (the menu bar app) and `build/talktrail` (the CLI), ad-hoc signed. GitHub Actions runs the same script on macOS 26 for every pull request and every push to `main` (`.github/workflows/build.yml`). To distribute it to other Macs, sign with a Developer ID and notarize:
 
 ```sh
-SIGN_IDENTITY="Developer ID Application: <Nombre> (<TEAMID>)" scripts/build.sh
+SIGN_IDENTITY="Developer ID Application: <Name> (<TEAMID>)" scripts/build.sh
 ```
 
-### Modelos
+### Models
 
-`Models/speaker-diarization` ya está incluido (revisión `df2625ac…`; los SHA-256 coinciden con su `provenance.json`). Para volver a descargarlo:
+`Models/speaker-diarization` is included (revision `df2625ac…`; the SHA-256 hashes match its `provenance.json`). To download it again:
 
 ```sh
 swift build -c release --product talktrail
@@ -77,48 +79,56 @@ swift build -c release --product talktrail
 cp -R /tmp/talktrail-models/speaker-diarization Models/
 ```
 
-## Uso
+## Usage
 
-**App:** abre `Talktrail.app`. Aparece un ícono de onda en la barra de menú, desde donde se puede:
+**App:** open `Talktrail.app`. A waveform icon appears in the menu bar, where you can:
 
-- Iniciar y detener la transcripción.
-- Elegir el idioma.
-- Activar o desactivar el micrófono, el audio de la llamada y la identificación de personas.
-- Abrir la última transcripción o la carpeta de transcripciones.
+- Start and stop a transcription.
+- Pick the language of the call.
+- Turn the microphone, the call audio and speaker identification on or off.
+- Open the last transcript or the transcripts folder.
 
-La primera vez macOS pide permiso de **Micrófono** y de **Grabación de audio del sistema**.
+The first time, macOS asks for **Microphone** and **System Audio Recording** permission.
 
 **CLI:**
 
 ```sh
-build/talktrail record -l es-MX          # graba hasta Ctrl+C
-build/talktrail transcribe reunion.m4a   # transcribe un archivo e identifica a las personas
-build/talktrail locales                  # idiomas disponibles
+build/talktrail record -l en-US          # records until Ctrl+C
+build/talktrail transcribe meeting.m4a   # transcribes a file and identifies the speakers
+build/talktrail locales                  # available languages
 build/talktrail --help
 ```
 
-`talktrail record` desde una terminal solo captura bien el micrófono. iTerm2 y Terminal no declaran `NSAudioCaptureUsageDescription`, así que macOS les entrega silencio en lugar del audio del sistema. Para grabar llamadas usa la app.
+Run from a terminal, `talktrail record` only captures the microphone reliably. iTerm2 and Terminal don't declare `NSAudioCaptureUsageDescription`, so macOS gives them silence instead of the system audio. Use the app to record calls.
 
-## Limitaciones conocidas
+## Languages
 
-- **Un idioma por sesión.** Si en la llamada se mezclan idiomas, lo que se diga en el otro idioma sale mal transcrito.
-- **Nombres:** la identificación distingue voces, no nombres; "Persona 1" se renombra a mano. Con intervenciones cortas (≈2 s) de voces parecidas, el modelo puede atribuirlas a la persona vecina o juntar dos voces en una. En las pruebas con voces sintéticas pasó con dos voces masculinas. Hay que validarlo con llamadas reales.
-- **Sin audífonos**, el filtro de eco descarta las repeticiones claras, pero si hablas encima de otra persona, esa frase de "Yo" puede incluir parte de lo que dijo el otro.
-- **Marcas de tiempo:** precisión de alrededor de ±0.5 s.
+The interface, the transcript headings and labels ("Me", "Speaker 1"), and the transcripts folder follow the macOS language: English by default, Spanish ("Yo", "Persona 1", `~/Documents/Transcripciones`) when Spanish comes first in System Settings > General > Language & Region. To use a different language for the app only, add Talktrail under **Applications** on that same screen.
 
-## Problemas frecuentes
+The language of the call itself is chosen separately, in the app's menu or with `talktrail -l`.
 
-- **`swift build` falla con `extra argument 'swiftLanguageModes'`:** las Command Line Tools quedaron con archivos viejos de Swift 5.10. Arreglo:
+User-facing text is written in English in the code, through `localized("…")`, and translated in `Sources/TalktrailCore/Resources/es.lproj/Localizable.strings`. `scripts/check-localizations.py` checks that every text has a Spanish translation with the same format specifiers; CI runs it on every pull request.
+
+## Known limitations
+
+- **One language per session.** If the call mixes languages, whatever is said in the other language is transcribed poorly.
+- **Names:** speaker identification tells voices apart, not names; rename "Speaker 1" by hand. With short turns (≈2 s) from similar voices, the model can attribute them to the neighbouring speaker or merge two voices into one. In tests with synthetic voices this happened with two male voices. It still needs validating on real calls.
+- **Without headphones**, the echo filter drops clear repetitions, but if you talk over someone, that "Me" phrase can include part of what they said.
+- **Timestamps** are accurate to about ±0.5 s.
+
+## Troubleshooting
+
+- **`swift build` fails with `extra argument 'swiftLanguageModes'`:** the Command Line Tools were left with stale Swift 5.10 files. Fix:
   `sudo rm /Library/Developer/CommandLineTools/usr/lib/swift/pm/ManifestAPI/PackageDescription.swiftmodule/*.private.swiftinterface`
-- **La parte "Remoto" sale vacía:** falta el permiso en Ajustes del Sistema > Privacidad y seguridad > Grabación de pantalla y audio del sistema. Sin ese permiso, macOS entrega silencio en vez de un error. La app avisa después de 45 s de silencio.
-- **macOS vuelve a pedir los permisos tras cada build:** pasa con la firma ad-hoc, porque la identidad cambia en cada compilación. Con Developer ID no ocurre.
-- **Diagnóstico:** `TALKTRAIL_DEBUG=1` muestra el nivel de audio de cada canal, los tiempos por palabra y los turnos de cada persona. Para la app: `open --env TALKTRAIL_DEBUG=1 --stderr /tmp/talktrail.log build/Talktrail.app`.
+- **The "Remote" side is empty:** the permission is missing in System Settings > Privacy & Security > Screen & System Audio Recording. Without it, macOS delivers silence instead of an error. The app warns after 45 s of silence.
+- **macOS asks for the permissions again after every build:** that happens with ad-hoc signing, because the identity changes with every build. It doesn't happen with a Developer ID.
+- **Diagnostics:** `TALKTRAIL_DEBUG=1` shows each channel's audio level, the timing of every word and each speaker's turns. For the app: `open --env TALKTRAIL_DEBUG=1 --stderr /tmp/talktrail.log build/Talktrail.app`.
 
-## Licencia
+## License
 
-Talktrail se distribuye bajo la licencia [Apache-2.0](LICENSE). Las atribuciones de terceros están en [NOTICE](NOTICE). `scripts/build.sh` copia ambos archivos, junto con las licencias de FluidAudio, a `Talktrail.app/Contents/Resources/Licenses`.
+Talktrail is licensed under [Apache-2.0](LICENSE). Third-party attributions are in [NOTICE](NOTICE). `scripts/build.sh` copies both files, along with FluidAudio's licenses, to `Talktrail.app/Contents/Resources/Licenses`.
 
-### Licencias de terceros
+### Third-party licenses
 
-- [FluidAudio](https://github.com/FluidInference/FluidAudio) 0.17.7: Apache-2.0. Se compila sin el *trait* `NemoTextProcessing`, así que no se enlaza su binario precompilado.
-- Modelos `FluidInference/speaker-diarization-coreml`: CC-BY-4.0, derivados de [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1). Requieren atribución al distribuirlos.
+- [FluidAudio](https://github.com/FluidInference/FluidAudio) 0.17.7: Apache-2.0. It is built without the `NemoTextProcessing` trait, so its prebuilt binary is not linked.
+- `FluidInference/speaker-diarization-coreml` models: CC-BY-4.0, derived from [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1). They require attribution when distributed.

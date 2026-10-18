@@ -3,7 +3,7 @@ import Observation
 import TalktrailCore
 import SwiftUI
 
-/// Menu bar app: start/stop a call transcription that is written to ~/Documents/Transcripciones.
+/// Menu bar app: start/stop a call transcription that is written to ~/Documents/Transcripts.
 ///
 /// Running as an app (not inside a terminal) matters: macOS grants the microphone and system-audio
 /// permissions to the app itself, using the usage descriptions in its Info.plist.
@@ -26,44 +26,44 @@ struct RecorderMenu: View {
 
     var body: some View {
         if recorder.isRecording {
-            Button("Detener transcripción") { Task { await recorder.stop() } }
+            Button(localized("Stop transcription")) { Task { await recorder.stop() } }
                 .disabled(recorder.isBusy)
         } else {
-            Button("Iniciar transcripción") { Task { await recorder.start() } }
+            Button(localized("Start transcription")) { Task { await recorder.start() } }
                 .disabled(recorder.isBusy || !(recorder.captureMicrophone || recorder.captureSystemAudio))
         }
         Text(recorder.status)
 
         Divider()
 
-        Picker("Idioma", selection: $recorder.localeIdentifier) {
+        Picker(localized("Language"), selection: $recorder.localeIdentifier) {
             ForEach(recorder.locales, id: \.self) { identifier in
                 Text(Locale.current.localizedString(forIdentifier: identifier) ?? identifier).tag(identifier)
             }
         }
         .pickerStyle(.menu)
         .disabled(recorder.isRecording || recorder.isBusy)
-        Toggle("Micrófono (Yo)", isOn: $recorder.captureMicrophone)
+        Toggle(localized("Microphone (%@)", localized("Me")), isOn: $recorder.captureMicrophone)
             .disabled(recorder.isRecording || recorder.isBusy)
-        Toggle("Audio de la llamada (Remoto)", isOn: $recorder.captureSystemAudio)
+        Toggle(localized("Call audio (%@)", localized("Remote")), isOn: $recorder.captureSystemAudio)
             .disabled(recorder.isRecording || recorder.isBusy)
-        Toggle("Identificar a cada persona al terminar", isOn: $recorder.identifySpeakers)
+        Toggle(localized("Identify each speaker when done"), isOn: $recorder.identifySpeakers)
             .disabled(recorder.isRecording || recorder.isBusy || !recorder.captureSystemAudio)
 
         Divider()
 
-        Button("Abrir última transcripción") {
+        Button(localized("Open last transcript")) {
             if let url = recorder.lastTranscript { NSWorkspace.shared.open(url) }
         }
         .disabled(recorder.lastTranscript == nil)
-        Button("Abrir carpeta de transcripciones") {
+        Button(localized("Open transcripts folder")) {
             try? FileManager.default.createDirectory(at: recorder.outputDirectory, withIntermediateDirectories: true)
             NSWorkspace.shared.open(recorder.outputDirectory)
         }
 
         Divider()
 
-        Button("Salir") { Task { await recorder.quit() } }
+        Button(localized("Quit")) { Task { await recorder.quit() } }
             .keyboardShortcut("q")
     }
 }
@@ -74,7 +74,7 @@ final class Recorder {
     private(set) var isRecording = false
     private(set) var isBusy = false
     private(set) var hasWarning = false
-    private(set) var status = "Listo" {
+    private(set) var status = localized("Ready") {
         didSet { FileHandle.standardError.write(Data("› \(status)\n".utf8)) }
     }
     private(set) var lastTranscript: URL?
@@ -91,8 +91,7 @@ final class Recorder {
     var identifySpeakers: Bool {
         didSet { UserDefaults.standard.set(identifySpeakers, forKey: "identifySpeakers") }
     }
-    let outputDirectory = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Documents/Transcripciones", isDirectory: true)
+    let outputDirectory = RecordingSession.Configuration.defaultOutputDirectory
     private var session: RecordingSession?
 
     var symbolName: String {
@@ -116,7 +115,7 @@ final class Recorder {
         guard session == nil, !isBusy else { return }
         isBusy = true
         hasWarning = false
-        status = "Preparando…"
+        status = localized("Preparing…")
 
         var configuration = RecordingSession.Configuration(
             locale: Locale(identifier: localeIdentifier), outputDirectory: outputDirectory
@@ -127,7 +126,10 @@ final class Recorder {
         let session = RecordingSession(configuration: configuration, onLine: { _ in }) { [weak self] message in
             Task { @MainActor in
                 self?.status = message
-                if message.hasPrefix("Aviso") || message.hasPrefix("Error") { self?.hasWarning = true }
+                // Warnings and errors from TalktrailCore start with these words.
+                if message.hasPrefix(localized("Warning")) || message.hasPrefix(localized("Error")) {
+                    self?.hasWarning = true
+                }
             }
         }
         do {
@@ -135,10 +137,10 @@ final class Recorder {
             self.session = session
             lastTranscript = url
             isRecording = true
-            status = "Transcribiendo → \(url.lastPathComponent)"
+            status = localized("Transcribing → %@", url.lastPathComponent)
         } catch {
             hasWarning = true
-            status = "Error: \(error.localizedDescription)"
+            status = localized("Error: %@", error.localizedDescription)
         }
         isBusy = false
     }
@@ -147,13 +149,13 @@ final class Recorder {
         guard let session else { return }
         self.session = nil
         isBusy = true
-        status = "Terminando la transcripción…"
+        status = localized("Finishing the transcript…")
         if let url = await session.stop() {
             lastTranscript = url
         }
         isRecording = false
         isBusy = false
-        status = "Guardado: \(lastTranscript?.lastPathComponent ?? "")"
+        status = localized("Saved: %@", lastTranscript?.lastPathComponent ?? "")
     }
 
     func quit() async {
@@ -165,7 +167,7 @@ final class Recorder {
         locales = await SpeechModel.supportedLocales().map(\.identifier).sorted()
         if !locales.contains(localeIdentifier) {
             let match = await SpeechModel.supportedLocale(equivalentTo: Locale(identifier: localeIdentifier))
-            localeIdentifier = match?.identifier ?? (locales.contains("es_ES") ? "es_ES" : locales.first ?? "es_ES")
+            localeIdentifier = match?.identifier ?? (locales.contains("en_US") ? "en_US" : locales.first ?? "en_US")
         }
     }
 

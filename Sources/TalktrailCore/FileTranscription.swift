@@ -13,13 +13,13 @@ public enum FileTranscription {
         let locale = try await SpeechModel.prepare(locale, onStatus: onStatus)
         let audio = try AVAudioFile(forReading: file)
         let format = TranscriptFormat(start: Date(), clock: .elapsed)
-        let label = "Audio"
+        let label = localized("Audio")
         let transcript = try TranscriptFile(
             directory: TranscriptStorage.draftsDirectory,
             format: format,
             name: format.fileName(),
-            title: "Transcripción (borrador)",
-            fields: [("Archivo", file.lastPathComponent), ("Idioma", locale.identifier)],
+            title: localized("Transcript (draft)"),
+            fields: [(localized("File"), file.lastPathComponent), (localized("Language"), locale.identifier)],
             onLine: onLine
         )
         let channel = try await ChannelTranscriber(
@@ -40,13 +40,17 @@ public enum FileTranscription {
         var participants = label
         if identifySpeakers {
             participants = await SpeakerDiarization.identifySpeakers(
-                in: file, segments: &segments, channel: label, offset: 0, label: "Persona", onStatus: onStatus
+                in: file, segments: &segments, channel: label, offset: 0, label: localized("Speaker"), onStatus: onStatus
             ) ?? participants
         }
         let duration = Double(audio.length) / processingFormat.sampleRate
         let url = try TranscriptStorage.write(
-            segments, format: format, title: "Transcripción",
-            fields: [("Archivo", file.lastPathComponent), ("Idioma", locale.identifier), ("Participantes", participants)],
+            segments, format: format, title: localized("Transcript"),
+            fields: [
+                (localized("File"), file.lastPathComponent),
+                (localized("Language"), locale.identifier),
+                (localized("Participants"), participants),
+            ],
             end: format.start.addingTimeInterval(duration), in: outputDirectory
         )
         try? FileManager.default.removeItem(at: transcript.url)

@@ -32,7 +32,7 @@ struct TranscriptFormat {
 
     func header(title: String, fields: [(String, String)]) -> String {
         var text = "# \(title)\n\n"
-        text += "- **Inicio:** \(Self.format(start, "yyyy-MM-dd HH:mm:ss"))\n"
+        text += "- **\(localized("Started")):** \(Self.format(start, "yyyy-MM-dd HH:mm:ss"))\n"
         for (key, value) in fields {
             text += "- **\(key):** \(value)\n"
         }
@@ -54,11 +54,13 @@ struct TranscriptFormat {
 
     func footer(end: Date) -> String {
         let minutes = Int((end.timeIntervalSince(start) / 60).rounded())
-        return "---\n\n_Fin: \(Self.format(end, "yyyy-MM-dd HH:mm:ss")) · duración \(minutes) min_\n"
+        let ended = localized("Ended: %@ · duration %ld min", Self.format(end, "yyyy-MM-dd HH:mm:ss"), minutes)
+        return "---\n\n_\(ended)_\n"
     }
 
+    /// "transcript-2026-10-17_10-12-25", with the first word in the user's language.
     func fileName() -> String {
-        "transcripcion-\(Self.format(start, "yyyy-MM-dd_HH-mm-ss"))"
+        "\(localized("transcript"))-\(Self.format(start, "yyyy-MM-dd_HH-mm-ss"))"
     }
 
     private static func format(_ date: Date, _ pattern: String) -> String {
@@ -88,10 +90,10 @@ enum TranscriptStorage {
 
     /// Live drafts live in the user's private temporary folder until the final transcript is written.
     static var draftsDirectory: URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("Talktrail-borradores", isDirectory: true)
+        FileManager.default.temporaryDirectory.appendingPathComponent("Talktrail-drafts", isDirectory: true)
     }
 
-    /// Moves drafts left behind by a session that crashed into `directory`, as `…-recuperada.md`. Drafts
+    /// Moves drafts left behind by a session that crashed into `directory`, as `…-recovered.md`. Drafts
     /// of a running session are written to as it goes, so anything untouched for ten minutes is abandoned.
     @discardableResult
     static func recoverDrafts(into directory: URL) -> [URL] {
@@ -100,9 +102,10 @@ enum TranscriptStorage {
         )) ?? []
         return drafts.compactMap { draft -> URL? in
             let modified = (try? draft.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+            let name = draft.deletingPathExtension().lastPathComponent + "-" + localized("recovered")
             guard draft.pathExtension == "md", let modified, modified < Date(timeIntervalSinceNow: -600),
                   let contents = try? Data(contentsOf: draft),
-                  let (url, handle) = try? create(in: directory, name: draft.deletingPathExtension().lastPathComponent + "-recuperada")
+                  let (url, handle) = try? create(in: directory, name: name)
             else { return nil }
             defer { try? handle.close() }
             guard (try? handle.write(contentsOf: contents)) != nil else { return nil }
@@ -235,7 +238,7 @@ actor TranscriptFile {
         guard let echoFilter, segment.speaker == echoFilter.microphone else { return false }
         let words = Self.words(segment.text)
         guard !words.isEmpty else { return false }
-        // Echo is near-simultaneous; short phrases ("sí", "ok") need a tighter match to count as one.
+        // Echo is near-simultaneous; short phrases ("yes", "ok") need a tighter match to count as one.
         let window = words.count < 4 ? 1.0 : echoWindow
         let remote = (recentSystemAudio + pending.map(\.segment).filter { $0.speaker == echoFilter.systemAudio })
             .filter { abs($0.start - segment.start) <= window }
@@ -269,7 +272,7 @@ actor TranscriptFile {
             try handle.write(contentsOf: Data(text.utf8))
             try handle.synchronize()
         } catch {
-            onLine("⚠️ No se pudo escribir en \(url.path): \(error.localizedDescription)")
+            onLine(localized("⚠️ Could not write to %@: %@", url.path, error.localizedDescription))
         }
     }
 }

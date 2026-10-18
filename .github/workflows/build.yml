@@ -28,6 +28,9 @@ jobs:
           xcodebuild -version
           swift --version
 
+      - name: Check translations
+        run: python3 -I scripts/check-localizations.py
+
       - name: Build the app and the CLI
         run: scripts/build.sh
 
@@ -38,3 +41,5 @@ jobs:
           build/talktrail --help
           test -f build/Talktrail.app/Contents/Resources/Licenses/NOTICE
           test -d build/Talktrail.app/Contents/Resources/Models/speaker-diarization
+          test -f build/Talktrail.app/Contents/Resources/es.lproj/InfoPlist.strings
+          test -f build/Talktrail.app/Contents/Resources/talktrail_TalktrailCore.bundle/es.lproj/Localizable.strings

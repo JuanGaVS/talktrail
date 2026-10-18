@@ -48,17 +48,17 @@ public enum SpeakerDiarization {
         onStatus: @escaping @Sendable (String) -> Void
     ) async -> String? {
         guard let models = modelsDirectory else {
-            onStatus("Aviso: faltan los modelos de identificación de personas; se guarda sin separar voces.")
+            onStatus(localized("Warning: the speaker identification models are missing; saving without telling voices apart."))
             return nil
         }
-        onStatus("Identificando a las personas…")
+        onStatus(localized("Identifying speakers…"))
         do {
             let turns = try await turns(in: audio, models: models) { fraction in
-                onStatus("Identificando a las personas… \(Int(fraction * 100)) %")
+                onStatus(localized("Identifying speakers… %ld%%", Int(fraction * 100)))
             }
             if ProcessInfo.processInfo.environment["TALKTRAIL_DEBUG"] == "1" {
                 for turn in turns {
-                    onStatus(String(format: "[debug] turno %@ %d: %.2f–%.2f s", label, turn.speaker, turn.start, turn.end))
+                    onStatus(String(format: "[debug] turn %@ %d: %.2f–%.2f s", label, turn.speaker, turn.start, turn.end))
                 }
             }
             let count = Set(turns.map(\.speaker)).count
@@ -66,7 +66,7 @@ public enum SpeakerDiarization {
             segments = assign(turns, to: segments, channel: channel, offset: offset) { "\(label) \($0)" }
             return count == 1 ? "\(label) 1" : "\(label) 1–\(count)"
         } catch {
-            onStatus("Aviso: no se pudo identificar a las personas (\(error.localizedDescription)).")
+            onStatus(localized("Warning: could not identify the speakers (%@).", error.localizedDescription))
             return nil
         }
     }

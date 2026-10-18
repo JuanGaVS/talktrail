@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "talktrail",
+    defaultLocalization: "en",
     platforms: [.macOS("26.0")],
     products: [
         .executable(name: "talktrail", targets: ["talktrail"]),
@@ -16,7 +17,9 @@ let package = Package(
     targets: [
         .target(
             name: "TalktrailCore",
-            dependencies: [.product(name: "FluidAudio", package: "FluidAudio")]
+            dependencies: [.product(name: "FluidAudio", package: "FluidAudio")],
+            // User-facing text, shared by the app and the CLI.
+            resources: [.process("Resources")]
         ),
         .executableTarget(
             name: "talktrail",

@@ -11,7 +11,7 @@ APP=$OUT/Talktrail.app
 cd "$ROOT"
 
 if [[ ! -d Models/speaker-diarization ]]; then
-    echo "Faltan los modelos en ./Models. Descárgalos una vez (ver README, «Modelos»)." >&2
+    echo "The models are missing from ./Models. Download them once (see the README, \"Models\")." >&2
     exit 1
 fi
 
@@ -27,6 +27,8 @@ rm -rf "$OUT"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN/TalktrailApp" "$APP/Contents/MacOS/Talktrail"
 cp Support/Talktrail-Info.plist "$APP/Contents/Info.plist"
+# Translated permission prompts (InfoPlist.strings).
+cp -R Support/*.lproj "$APP/Contents/Resources/"
 cp -R Models "$APP/Contents/Resources/Models"
 cp -R "$BIN"/*.bundle "$APP/Contents/Resources/"
 

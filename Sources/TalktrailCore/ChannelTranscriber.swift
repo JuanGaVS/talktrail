@@ -23,7 +23,7 @@ public enum SpeechModel {
         }
         let transcriber = makeTranscriber(locale)
         if await AssetInventory.status(forModules: [transcriber]) < .installed {
-            onStatus("Descargando el modelo de voz para \(locale.identifier) (solo la primera vez)…")
+            onStatus(localized("Downloading the speech model for %@ (first time only)…", locale.identifier))
             // Reserving keeps the model from being purged; it is not required to use it.
             _ = try? await AssetInventory.reserve(locale: locale)
             if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
@@ -113,7 +113,7 @@ final class ChannelTranscriber: @unchecked Sendable {
                     await transcript.markFinalized(label, through: self.sessionTime(result.resultsFinalizationTime))
                 }
             } catch {
-                onStatus("Error transcribiendo \"\(label)\": \(error.localizedDescription)")
+                onStatus(localized("Error transcribing \"%@\": %@", label, error.localizedDescription))
             }
         }
     }
